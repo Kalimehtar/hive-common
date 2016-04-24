@@ -1,4 +1,3 @@
 #lang setup/infotab
 
-(define scribblings '(("hive-common.scrbl" () (tool-library)
-                       "hive/common")))
+(define scribblings '(("hive-common.scrbl" ())))

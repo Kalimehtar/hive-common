@@ -1,11 +1,11 @@
 #lang racket/base
 (require racket/contract)
 (define id? exact-nonnegative-integer?)
-
-(provide (contract-out          
+(provide (contract-out
+          [serializable? (any/c . -> . boolean?)]
           [deserialize (any/c (-> ref? any/c) . -> . any/c)]
-          [serialize (struct? (-> struct? struct?) . -> . list?)]
-          [struct-name (struct? . -> . symbol?)])         
+          [serialize ((serializable?) ((serializable? . -> . serializable?)) . ->* . list?)]
+          [struct-name (serializable? . -> . symbol?)])
          struct/serialize)
 
 (require racket/function 

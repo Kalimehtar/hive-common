@@ -12,6 +12,4 @@
 (struct ref (typename id) #:prefab)
 
 (define (find-by-ref id list-of-objs)
-  (for/first ([u (in-list list-of-objs)]
-              #:when (= id (object-id u)))
-    u))
+  (findf (λ (o) (= (object-id o) id)) list-of-objs))

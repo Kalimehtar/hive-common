@@ -2,6 +2,9 @@
 (require racket/contract)
 (define id? exact-nonnegative-integer?)
 (provide (contract-out
+          [struct object ((id id?))]
+          [struct ref ((typename symbol?) (id id?))]
+          [find-by-ref (id? (listof object?) . -> . (or/c #f object?))]
           [serializable? (any/c . -> . boolean?)]
           [deserialize (any/c (-> ref? any/c) . -> . any/c)]
           [serialize ((serializable?) ((serializable? . -> . serializable?)) . ->* . list?)]
@@ -10,10 +13,14 @@
 
 (require racket/function 
          racket/generic
-         "ref.rkt"
          (for-syntax racket/base
                      racket/struct-info
                      racket/list))
+
+(struct ref (typename id) #:prefab)
+
+(define (find-by-ref id list-of-objs)
+  (findf (λ (o) (= (object-id o) id)) list-of-objs))
 
 (define-generics serializable
   (serialize serializable [prepare])
@@ -36,11 +43,14 @@
 
 (define-syntax-rule (struct/serialize name rest ...)
   (begin
+    (define %serialize #t)
     (struct name rest ...
       #:methods gen:serializable
       [(define (serialize s [prepare identity]) (%serialize s prepare))
        (define (struct-name s) 'name)])
-    (define %serialize (make-serializer name))))
+    (set! %serialize (make-serializer name))))
+
+(struct/serialize object (id))
 
 (define (deserialize item [deref identity])
   (define (rec x) (deserialize x deref))

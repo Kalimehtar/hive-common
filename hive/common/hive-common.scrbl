@@ -31,16 +31,17 @@ Sends @racket[data] to @racket[out] and flushes @racket[out].}
 Reads from @racket[in] like @racket[read]. If @racket[read] is not completed in @racket[timeout],
 returns @racket[eof]. @racket[timeout] is treated like in @racket[sync/timeout]}
 
-@section{Objects and references}
+@section{Serializable objects}
 
-@(defmodule hive/common/ref)
+@(defmodule hive/common/serialize)
 
 @defstruct[object ([id exact-nonnegative-integer?])]{
   A strucure type for objects, that may be stored in server storage.
 Object types are expected to inherit this structure.}
 
 @defstruct[ref ([typename symbol?] [id exact-nonnegative-integer?])]{
-  A strucure type for references to objects.}
+  A structure type for references to objects. When object is stored,
+all @racket[object]s in its fields are replaced to @racket[ref]s.}
 
 @(define helper-eval (make-base-eval))
 @interaction-eval[#:eval helper-eval
@@ -53,10 +54,6 @@ Returns an object with id equals to @racket[id] from @racket[objects]. If there 
           (find-by-ref 2 (list (object 5) (object 6)))
           (find-by-ref 5 (list (object 5) (object 6)))]}
 
-@section{Serializable objects}
-
-@(defmodule hive/common/serialize)
-
 @defform[(struct/serialize name rest ...)]{Constracts new serializable structure. Has same subforms as @racket[struct]}
 
 @defproc[(serializable? [obj any/c]) boolean?]{Predicate for serializable objects.}
@@ -68,8 +65,11 @@ This serialization is for use with @racket[write] and @racket[read]. NB: it does
 Type is expected to be known from other sources.
 @examples[#:eval helper-eval
           (struct/serialize test (a b))
-          (serialize (test (object 3) 5))]}
+          (define data (test (object 3) 5))
+          (serialize data)]}
 
 @defproc[(deserialize [data any/c]
                       [deref (ref? . -> . any/c)]) any/c]{Returns deserialized content of the serializable object.
-Result is expected be used to constract new object with same fields.}
+Result is expected be used to constract new object with same fields.
+@examples[#:eval helper-eval
+          (equal? (apply test (serialize data)) data)]}

@@ -2,7 +2,6 @@
 @(require scribble/eval (for-label racket/base
                                    racket/function
                                    hive/common/read-write
-                                   hive/common/ref
                                    hive/common/serialize))
 
 @title{Hive}
@@ -45,7 +44,7 @@ all @racket[object]s in its fields are replaced to @racket[ref]s.}
 
 @(define helper-eval (make-base-eval))
 @interaction-eval[#:eval helper-eval
-                  (require hive/common/ref hive/common/serialize)]
+                  (require hive/common/serialize)]
 @defproc[(find-by-ref [id exact-nonnegative-integer?]
                       [objects (listof object?)]) (or/c #f object?)]{
 Returns an object with id equals to @racket[id] from @racket[objects]. If there is no such object, then returns #f.
@@ -64,7 +63,7 @@ Returns serialization of the @racket[obj]'s content.
 This serialization is for use with @racket[write] and @racket[read]. NB: it doesn't contains type of @racket[obj].
 Type is expected to be known from other sources.
 @examples[#:eval helper-eval
-          (struct/serialize test (a b))
+          (struct/serialize test (a b) #:transparent)
           (define data (test (object 3) 5))
           (serialize data)]}
 
@@ -72,4 +71,6 @@ Type is expected to be known from other sources.
                       [deref (ref? . -> . any/c)]) any/c]{Returns deserialized content of the serializable object.
 Result is expected be used to constract new object with same fields.
 @examples[#:eval helper-eval
-          (equal? (apply test (serialize data)) data)]}
+          data
+          (apply test (deserialize (serialize data)
+                                   (λ (r) (object (ref-id r)))))]}

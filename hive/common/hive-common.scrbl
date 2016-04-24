@@ -1,8 +1,9 @@
 #lang scribble/manual
-@(require scribble/eval (for-label racket/base
-                                   racket/function
-                                   hive/common/read-write
-                                   hive/common/serialize))
+@require[scribble/eval (for-label racket/base
+                                  racket/function
+                                  hive/common/read-write
+                                  hive/common/serialize
+                                  hive/common/users)]
 
 @title{Hive}
 
@@ -10,17 +11,17 @@
 
 Hive is the framework for a client-server application with persistent object storage on server side.
 
-@(defmodule hive/common)
+@defmodule[hive/common]
 
 This package provides functions, that will be used both on client and server sides of the hive application.
 
 @section{Network read and write}
 
-@(defmodule hive/common/read-write)
+@defmodule[hive/common/read-write]
 
-This module provides read and write for network streams. The connection is unreliable. I know, that TCP is considered
-reliable, but in fact, when ISP drops part of packets, it may recover too slow. So, hive uses keepalive packets
-and tools to control read timeout in this module.
+This library provides read and write for network streams. The connection is unreliable. I know, that TCP is considered
+reliable, but in fact, when network infrastucture drops part of packets, it may recover too slow. So,
+Hive uses keepalive packets and tools to control read timeout.
 
 @defproc[(write/flush [data any/c] [out output-port?]) void?]{
 Sends @racket[data] to @racket[out] and flushes @racket[out].}
@@ -32,17 +33,22 @@ returns @racket[eof]. @racket[timeout] is treated like in @racket[sync/timeout]}
 
 @section{Serializable objects}
 
-@(defmodule hive/common/serialize)
+@defmodule[hive/common/serialize]
+
+This library provide serializable objects. It differs from @racketmodname[racket/serialize] in that it
+doesn't deep copy of the object. It rather replaces all field values, that references to other @racket[object]s
+to special @racket[ref] structure. This way the library may be used to send object by network or save to file
+without saving all linked objects.
 
 @defstruct[object ([id exact-nonnegative-integer?])]{
-  A strucure type for objects, that may be stored in server storage.
+  A structure type for objects, that may be used in serializable structure.
 Object types are expected to inherit this structure.}
 
 @defstruct[ref ([typename symbol?] [id exact-nonnegative-integer?])]{
-  A structure type for references to objects. When object is stored,
+  A structure type for references to objects. When object is serialize,
 all @racket[object]s in its fields are replaced to @racket[ref]s.}
 
-@(define helper-eval (make-base-eval))
+@define[helper-eval (make-base-eval)]
 @interaction-eval[#:eval helper-eval
                   (require hive/common/serialize)]
 @defproc[(find-by-ref [id exact-nonnegative-integer?]
@@ -55,7 +61,7 @@ Returns an object with id equals to @racket[id] from @racket[objects]. If there 
 
 @defform[(struct/serialize name rest ...)]{Constracts new serializable structure. Has same subforms as @racket[struct]}
 
-@defproc[(serializable? [obj any/c]) boolean?]{Predicate for serializable objects.}
+@defproc[(serializable? [obj any/c]) boolean?]{Is a predicate for serializable objects.}
 
 @defproc[(serialize [obj serializable?]
                     [prepare (serializable? . -> . serializable?) identity]) list?]{
@@ -74,3 +80,16 @@ Result is expected be used to constract new object with same fields.
           data
           (apply test (deserialize (serialize data)
                                    (λ (r) (object (ref-id r)))))]}
+
+@section{Users}
+
+@defmodule[hive/common/users]
+
+@defstruct[(users object) ([name string?] [password string?] [role symbol?] [online #f]) #:mutable]{
+Represent user of Hive.
+@itemlist[
+ @item{@racket[name] - user name, any unicode characters allowed;}
+ @item{@racket[password] - user password;}
+ @item{@racket[role] - user role. Hive accepts @racket['admin] and @racket['user], but application may
+   invent it's own;}
+ @item{@racket[online] - #t, iff user is logged on and sending keepalive packets.}]}

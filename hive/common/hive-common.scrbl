@@ -27,7 +27,7 @@ Hive uses keepalive packets and tools to control read timeout.
 Sends @racket[data] to @racket[out] and flushes @racket[out].}
 
 @defproc[(read/timeout [in input-port? (current-input-port)]
-                       [timeout (or/c #f (and/c real? (not/c negative?)) (-> any)) 30]) void?]{
+                       [timeout (or/c #f (and/c real? (not/c negative?)) (-> any)) 30]) any]{
 Reads from @racket[in] like @racket[read]. If @racket[read] is not completed in @racket[timeout],
 returns @racket[eof]. @racket[timeout] is treated like in @racket[sync/timeout]}
 

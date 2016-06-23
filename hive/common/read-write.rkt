@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/contract)
+(require racket/contract racket/function)
 (provide/contract [write/flush (any/c output-port? . -> . void?)]
                   [read/timeout (() (input-port? (or/c #f (and/c real? (not/c negative?)) (-> any))) . ->* . any/c)])
 
@@ -12,7 +12,9 @@
   (call-in-nested-thread
    (λ ()
      (define master (current-thread))
-     (define slave (thread (λ () (thread-send master (read in)))))
+     (define slave (thread (λ () (thread-send master
+                                              (with-handlers ([(const #t) (const eof)])
+                                                (read in))))))
      (cond
        [(sync/timeout timeout slave)
         (thread-receive)]

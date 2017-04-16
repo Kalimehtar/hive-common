@@ -43,12 +43,11 @@
 
 (define-syntax-rule (struct/serialize name rest ...)
   (begin
-    (define %serialize #t)
     (struct name rest ...
       #:methods gen:serializable
       [(define (serialize s [prepare identity]) (%serialize s prepare))
        (define (struct-name s) 'name)])
-    (set! %serialize (make-serializer name))))
+    (define %serialize (make-serializer name))))
 
 (struct/serialize object (id))
 

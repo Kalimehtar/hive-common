@@ -1,24 +1,20 @@
 #lang racket/base
-(require racket/contract racket/function)
-(provide/contract [write/flush (any/c output-port? . -> . void?)]
-                  [read/timeout (() (input-port? (or/c #f (and/c real? (not/c negative?)) (-> any))) . ->* . any/c)])
+(require racket/contract racket/function thread-utils)
+(provide/contract [write/flush ((any/c) (output-port?) . ->* . void?)]
+                  [read/timeout (() (input-port? timeout/c) . ->* . any/c)]
+                  [write/flush/timeout ((any/c) (output-port? timeout/c) . ->* . void?)])
 
-(define (write/flush data port)
-  (write data port)
-  (display "\n" port)
-  (flush-output port))
+(define (write/flush data [out (current-output-port)])
+  (write data out)
+  (display "\n" out)
+  (flush-output out))
 
 (define (read/timeout [in (current-input-port)] [timeout 30])
-  (call-in-nested-thread
-   (λ ()
-     (define master (current-thread))
-     (define slave (thread (λ () (thread-send master
-                                              (with-handlers ([(const #t) (const eof)])
-                                                (read in))))))
-     (cond
-       [(sync/timeout timeout slave)
-        (thread-receive)]
-       [else
-        (kill-thread slave)
-        eof]))))
+  (until-timeout (thunk (read in)) timeout eof))
+
+(define (write/flush/timeout data [out (current-output-port)] [timeout 30])
+  (until-timeout (thunk (write/flush data out)) timeout void))
+
+
+
   

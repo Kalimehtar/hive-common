@@ -10,7 +10,7 @@
   (flush-output out))
 
 (define (read/timeout [in (current-input-port)] [timeout 30])
-  (until-timeout (thunk (read in)) timeout eof))
+  (until-timeout (thunk (read in)) timeout (λ _ eof)))
 
 (define (write/flush/timeout data [out (current-output-port)] [timeout 30])
   (until-timeout (thunk (write/flush data out)) timeout void))

@@ -7,7 +7,8 @@
           [find-by-ref (id? (listof object?) . -> . (or/c #f object?))]
           [serializable? (any/c . -> . boolean?)]
           [deserialize (any/c (-> ref? any/c) . -> . any/c)]
-          [serialize ((serializable?) ((serializable? . -> . serializable?)) . ->* . list?)]
+          [serialize ((any/c) ((any/c . -> . any/c)) . ->* . any/c)]
+          [serialize-ref (any/c . -> . any/c)]
           [struct-name (serializable? . -> . symbol?)])
          struct/serialize)
 
